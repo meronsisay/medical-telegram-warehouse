@@ -15,6 +15,7 @@ pythonenv*
 .env
 .env.local
 .env.*.local
+*.session
 
 # IDE
 .vscode/
