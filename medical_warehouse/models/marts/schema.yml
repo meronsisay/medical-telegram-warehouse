@@ -1,0 +1,99 @@
+version: 2
+
+models:
+  - name: dim_channels
+    description: "Dimension table containing channel information and statistics"
+    columns:
+      - name: channel_key
+        description: "Surrogate key for channel"
+        tests:
+          - unique
+          - not_null
+      - name: channel_username
+        description: "Channel username from Telegram"
+        tests:
+          - unique
+          - not_null
+      - name: channel_name
+        description: "Display name of the channel"
+      - name: channel_type
+        description: "Category of channel (Medical/Pharmaceutical/Cosmetics/Other)"
+      - name: first_post_date
+        description: "Date of the first post in the channel"
+      - name: last_post_date
+        description: "Date of the last post in the channel"
+      - name: total_posts
+        description: "Total number of posts in the channel"
+        tests:
+          - not_null
+      - name: avg_views
+        description: "Average views per post in the channel"
+
+  - name: dim_dates
+    description: "Dimension table containing date attributes for analysis"
+    columns:
+      - name: date_key
+        description: "Surrogate key for date"
+        tests:
+          - unique
+          - not_null
+      - name: full_date
+        description: "Actual date"
+        tests:
+          - unique
+          - not_null
+      - name: day_of_week
+        description: "Day of week number (1-7)"
+      - name: day_name
+        description: "Day name (Monday, Tuesday, etc.)"
+      - name: week_of_year
+        description: "Week number in the year"
+      - name: month
+        description: "Month number (1-12)"
+      - name: month_name
+        description: "Month name (January, February, etc.)"
+      - name: quarter
+        description: "Quarter number (1-4)"
+      - name: year
+        description: "Year"
+      - name: is_weekend
+        description: "Flag indicating if date is weekend (True/False)"
+
+  - name: fct_messages
+    description: "Fact table containing message metrics"
+    columns:
+      - name: message_id
+        description: "Unique message identifier"
+        tests:
+          - unique
+          - not_null
+      - name: channel_key
+        description: "Foreign key to dim_channels"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_channels')
+              field: channel_key
+      - name: date_key
+        description: "Foreign key to dim_dates"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_dates')
+              field: date_key
+      - name: message_text
+        description: "Full message text content"
+      - name: message_length
+        description: "Length of the message text"
+      - name: view_count
+        description: "Number of views"
+        tests:
+          - not_null
+      - name: forward_count
+        description: "Number of forwards"
+      - name: has_image
+        description: "Flag indicating if message has image"
+      - name: image_path
+        description: "Path to downloaded image if any"
+      - name: has_media_flag
+        description: "Legacy flag for media presence"
