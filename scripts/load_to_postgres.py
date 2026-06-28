@@ -25,7 +25,7 @@ class DataLakeLoader:
             port=os.getenv("DB_PORT", "5433"),
             dbname=os.getenv("DB_NAME", "telegram_warehouse"),
             user=os.getenv("DB_USER", "postgres"),
-            password=os.getenv("DB_PASSWORD", "postgres")
+            password=os.getenv("DB_PASSWORD", "postgres"),
         )
         self.conn.autocommit = False
         self.cursor = self.conn.cursor()
@@ -76,7 +76,8 @@ class DataLakeLoader:
         # Get all JSON files (excluding summary files)
         json_files = list(messages_lake.glob("**/*.json"))
         json_files = [
-            f for f in json_files 
+            f
+            for f in json_files
             if "summary" not in f.name and "all_channels" not in f.name
         ]
 
@@ -90,44 +91,46 @@ class DataLakeLoader:
             print(f"\nProcessing: {file_path}")
 
             try:
-                with open(file_path, 'r', encoding='utf-8') as f:
+                with open(file_path, "r", encoding="utf-8") as f:
                     data = json.load(f)
 
-                if 'messages' not in data:
+                if "messages" not in data:
                     continue
 
-                messages = data['messages']
-                channel = data.get('channel', 'unknown')
+                messages = data["messages"]
+                channel = data.get("channel", "unknown")
 
                 rows = []
                 for msg in messages:
-                    raw_data = msg.get('raw_data', {})
-                    date_str = msg.get('message_date')
+                    raw_data = msg.get("raw_data", {})
+                    date_str = msg.get("message_date")
                     if date_str:
                         try:
                             message_date = datetime.fromisoformat(
-                                date_str.replace('Z', '+00:00')
+                                date_str.replace("Z", "+00:00")
                             )
                         except:
                             message_date = None
                     else:
                         message_date = None
 
-                    rows.append((
-                        msg.get('message_id'),
-                        msg.get('channel_username', channel),
-                        msg.get('channel_name', ''),
-                        message_date,
-                        msg.get('message_text', ''),
-                        msg.get('views', 0),
-                        msg.get('forwards', 0),
-                        msg.get('has_media', False),
-                        msg.get('media_type'),
-                        msg.get('image_path'),
-                        msg.get('message_url'),
-                        json.dumps(raw_data),
-                        str(file_path)
-                    ))
+                    rows.append(
+                        (
+                            msg.get("message_id"),
+                            msg.get("channel_username", channel),
+                            msg.get("channel_name", ""),
+                            message_date,
+                            msg.get("message_text", ""),
+                            msg.get("views", 0),
+                            msg.get("forwards", 0),
+                            msg.get("has_media", False),
+                            msg.get("media_type"),
+                            msg.get("image_path"),
+                            msg.get("message_url"),
+                            json.dumps(raw_data),
+                            str(file_path),
+                        )
+                    )
 
                 if rows:
                     execute_values(
@@ -146,7 +149,7 @@ class DataLakeLoader:
                             loaded_at = CURRENT_TIMESTAMP
                         """,
                         rows,
-                        page_size=1000
+                        page_size=1000,
                     )
 
                     self.conn.commit()
