@@ -35,8 +35,12 @@ medical-telegram-warehouse/
 │ │ └── marts/ # Star schema (dimensions + facts)
 │ └── tests/ # Custom data tests
 ├── api/ # FastAPI application
+│ ├── main.py # App setup
+│ ├── database.py # Database connection
+│ ├── schemas.py # Pydantic models
+│ └── endpoints.py # API endpoints
 ├── scripts/
-│ ├── load_to_postgres.py # Load data lake to PostgreSQL
+│ ├── load_data_lake_to_postgres.py # Load data lake to PostgreSQL
 │ └── load_yolo_to_postgres.py # Load YOLO results to PostgreSQL
 ├── .env # Environment variables
 ├── docker-compose.yml # Container orchestration
@@ -118,6 +122,20 @@ text
 | tikva Pharma | Mixed (108 product + 54 lifestyle) |
 | CheMed | People-focused (51 lifestyle) |
 | Doctors Online | Promotional (10 promo images) |
+
+###  Analytical API 
+**Endpoints:**
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/reports/top-products` | GET | Most mentioned terms/products |
+| `/api/channels/{name}/activity` | GET | Channel posting trends |
+| `/api/search/messages` | GET | Search messages by keyword |
+| `/api/reports/visual-content` | GET | Image usage statistics |
+| `/api/channels` | GET | List all channels |
+
+**API Documentation:** `http://localhost:8000/docs` (auto-generated OpenAPI)
+
 ---
 
 ## Setup Instructions
@@ -178,3 +196,7 @@ dbt run
 dbt test
 dbt docs generate
 dbt docs serve
+
+# Start API
+cd ..
+uvicorn api.main:app --reload --host localhost --port 8000
