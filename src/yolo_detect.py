@@ -1,6 +1,4 @@
-import os
 import csv
-import json
 from pathlib import Path
 import pandas as pd
 from ultralytics import YOLO
