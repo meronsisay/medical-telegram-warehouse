@@ -97,3 +97,74 @@ models:
         description: "Path to downloaded image if any"
       - name: has_media_flag
         description: "Legacy flag for media presence"
+
+  # ============================================
+  #  YOLO Image Detection Fact Table
+  # ============================================
+  - name: fct_image_detections
+    description: "Fact table with YOLO image detection results. Links image analysis to messages."
+    columns:
+      - name: message_id
+        description: "Unique message identifier (FK to fct_messages)"
+        tests:
+          - unique
+          - not_null
+      
+      - name: channel_key
+        description: "Foreign key to dim_channels"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_channels')
+              field: channel_key
+      
+      - name: date_key
+        description: "Foreign key to dim_dates"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_dates')
+              field: date_key
+      
+      - name: view_count
+        description: "Number of views for the message"
+      
+      - name: has_image
+        description: "Flag indicating if message has an image"
+      
+      - name: image_category
+        description: "Category of image (promotional/product_display/lifestyle/other)"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['promotional', 'product_display', 'lifestyle', 'other']
+      
+      - name: total_objects
+        description: "Total number of objects detected in the image"
+      
+      - name: is_promotional
+        description: "Flag for promotional content (person + product)"
+      
+      - name: is_product_display
+        description: "Flag for product display (product only)"
+      
+      - name: is_lifestyle
+        description: "Flag for lifestyle content (person only)"
+      
+      - name: is_other
+        description: "Flag for other content (neither person nor product)"
+      
+      - name: unique_classes_detected
+        description: "Number of unique object classes detected"
+      
+      - name: avg_confidence
+        description: "Average confidence score of all detections"
+      
+      - name: top_detected_class
+        description: "Object class with highest confidence score"
+      
+      - name: top_confidence
+        description: "Highest confidence score among all detections"
+      
+      - name: image_category_label
+        description: "Human-readable label for image category"

@@ -1,0 +1,13 @@
+version: 2
+
+sources:
+  - name: raw
+    description: "Raw data sources from the data lake"
+    schema: raw
+    tables:
+      - name: telegram_messages
+        description: "Raw Telegram messages"
+      - name: yolo_results_summary
+        description: "YOLO detection summary by image"
+      - name: yolo_results_detailed
+        description: "Detailed YOLO object detections"

@@ -22,12 +22,9 @@ clean-targets: ["target", "dbt_packages"]
 # Configuring models
 models:
   medical_warehouse:
-    # Staging models - materialized as views (lightweight, always up-to-date)
     staging:
       +materialized: view
       +schema: staging
-    
-    # Marts models - materialized as tables (for performance)
     marts:
       +materialized: table
       +schema: marts
