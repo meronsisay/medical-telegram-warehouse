@@ -18,11 +18,13 @@ This project builds a data platform that scrapes, stores, and analyzes data from
 ```
 medical-telegram-warehouse/
 ├── src/
-│ └── scraper.py # Telegram scraper
+│ ├── scraper.py # Telegram scraper
+│ └── yolo_detect.py # YOLO object detection
 ├── data/
 │ └── raw/
 │ ├── telegram_messages/ # JSON files by date/channel
 │ └── images/ # Downloaded images by channel
+├── data/processed/yolo_results/ # YOLO detection results
 ├── logs/
 │ └── scraper_*.log # Scraping logs
 ├── tests/
@@ -34,7 +36,8 @@ medical-telegram-warehouse/
 │ └── tests/ # Custom data tests
 ├── api/ # FastAPI application
 ├── scripts/
-│ ├── load_data_lake_to_postgres.py # Load data lake to PostgreSQL
+│ ├── load_to_postgres.py # Load data lake to PostgreSQL
+│ └── load_yolo_to_postgres.py # Load YOLO results to PostgreSQL
 ├── .env # Environment variables
 ├── docker-compose.yml # Container orchestration
 ├── requirements.txt # Python dependencies
@@ -95,6 +98,26 @@ text
 - Unique and not-null constraints
 - Relationship validations
 - Custom tests: no future messages, positive views, valid channel types
+
+### YOLO Image Analysis 
+
+| Category | Count | Avg Views |
+|----------|-------|-----------|
+| **Promotional** (person + product) | 20 | **15,590** |
+| Other | 306 | 9,690 |
+| Lifestyle (person only) | 161 | 7,105 |
+| Product Display | 313 | **595** |
+
+**Key Insight:** Promotional posts get **26x more views** than product displays! 
+
+**Channel Visual Strategy:**
+
+| Channel | Strategy |
+|---------|----------|
+| Lobelia | Product-focused (165 product shots) |
+| tikva Pharma | Mixed (108 product + 54 lifestyle) |
+| CheMed | People-focused (51 lifestyle) |
+| Doctors Online | Promotional (10 promo images) |
 ---
 
 ## Setup Instructions
@@ -132,20 +155,26 @@ pip install -r requirements.txt
   - DB_USER=postgres
   - DB_PASSWORD=postgres
 
-# Start PostgreSQL with Docker
+# Run Pipeline
+
+# Start PostgreSQL
 docker-compose up -d postgres
 
-# Scrape Telegram channels
+# Scrape data
 python src/scraper.py
 
-# Load data from data lake to PostgreSQL
-python scripts/load_to_postgres.py
+# Load data to PostgreSQL
+python scripts/load_data_lake_to_postgres.py
 
-# Run dbt transformations
+# Run YOLO detection
+python src/yolo_detect.py
+
+# Load YOLO results
+python scripts/load_yolo_to_postgres.py
+
+# Run dbt
 cd medical_warehouse
 dbt run
 dbt test
-
-# Generate documentation
 dbt docs generate
 dbt docs serve
