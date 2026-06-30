@@ -24,6 +24,7 @@ load_dotenv()
 # OPS - Individual pipeline steps
 # ============================================
 
+
 @op(
     config_schema={
         "limit": dg.Field(int, default_value=1000, description="Messages per channel"),
@@ -34,10 +35,10 @@ def scrape_telegram_data(context) -> dict:
     context.log.info("Starting Telegram data scraping...")
     project_root = Path(__file__).parent.parent
     scraper_path = project_root / "src" / "scraper.py"
-    
+
     try:
         result = subprocess.run(
-            [sys.executable, str(scraper_path)],  
+            [sys.executable, str(scraper_path)],
             capture_output=True,
             text=True,
             cwd=str(project_root),
@@ -45,11 +46,11 @@ def scrape_telegram_data(context) -> dict:
         )
         if result.returncode != 0:
             raise Exception(f"Scraping failed: {result.stderr}")
-        
+
         return {
             "status": "success",
             "messages_scraped": "~3000",
-            "output": result.stdout
+            "output": result.stdout,
         }
     except Exception as e:
         context.log.error(f"Scraping failed: {e}")
@@ -62,7 +63,7 @@ def load_raw_to_postgres(context, scraped_data: dict) -> dict:
     context.log.info("Loading raw data to PostgreSQL...")
     project_root = Path(__file__).parent.parent
     loader_path = project_root / "scripts" / "load_to_postgres.py"
-    
+
     try:
         result = subprocess.run(
             [sys.executable, str(loader_path)],  # <--- Changed from "python"
@@ -73,11 +74,11 @@ def load_raw_to_postgres(context, scraped_data: dict) -> dict:
         )
         if result.returncode != 0:
             raise Exception(f"Loading failed: {result.stderr}")
-        
+
         return {
             "status": "success",
             "loaded_data": "raw.telegram_messages",
-            "scraped_data": scraped_data
+            "scraped_data": scraped_data,
         }
     except Exception as e:
         context.log.error(f"Loading failed: {e}")
@@ -90,7 +91,7 @@ def run_yolo_enrichment(context, loaded_data: dict) -> dict:
     context.log.info("Running YOLO image enrichment...")
     project_root = Path(__file__).parent.parent
     yolo_path = project_root / "src" / "yolo_detect.py"
-    
+
     try:
         result = subprocess.run(
             [sys.executable, str(yolo_path)],  # <--- Changed from "python"
@@ -101,7 +102,7 @@ def run_yolo_enrichment(context, loaded_data: dict) -> dict:
         )
         if result.returncode != 0:
             raise Exception(f"YOLO detection script failed: {result.stderr}")
-        
+
         # Load YOLO results to PostgreSQL
         loader_path = project_root / "scripts" / "load_yolo_to_postgres.py"
         load_result = subprocess.run(
@@ -113,12 +114,12 @@ def run_yolo_enrichment(context, loaded_data: dict) -> dict:
         )
         if load_result.returncode != 0:
             raise Exception(f"YOLO PostgreSQL loading failed: {load_result.stderr}")
-        
+
         return {
             "status": "success",
             "yolo_complete": True,
             "yolo_loaded": True,
-            "previous_stage": loaded_data
+            "previous_stage": loaded_data,
         }
     except Exception as e:
         context.log.error(f"YOLO enrichment layer failed: {e}")
@@ -131,11 +132,13 @@ def run_dbt_transformations(context, enriched_data: dict) -> dict:
     context.log.info("Running dbt transformations...")
     project_root = Path(__file__).parent.parent
     dbt_path = project_root / "medical_warehouse"
-    
+
     try:
         # Install packages
-        subprocess.run(["dbt", "deps"], capture_output=True, text=True, cwd=str(dbt_path))
-        
+        subprocess.run(
+            ["dbt", "deps"], capture_output=True, text=True, cwd=str(dbt_path)
+        )
+
         # Run models
         run_result = subprocess.run(
             ["dbt", "run"],
@@ -145,7 +148,7 @@ def run_dbt_transformations(context, enriched_data: dict) -> dict:
         )
         if run_result.returncode != 0:
             raise Exception(f"dbt run failed: {run_result.stderr}")
-        
+
         # Run validation tests
         test_result = subprocess.run(
             ["dbt", "test"],
@@ -153,12 +156,12 @@ def run_dbt_transformations(context, enriched_data: dict) -> dict:
             text=True,
             cwd=str(dbt_path),
         )
-        
+
         return {
             "status": "success",
             "models_run": True,
             "tests_passed": test_result.returncode == 0,
-            "enriched_data": enriched_data
+            "enriched_data": enriched_data,
         }
     except Exception as e:
         context.log.error(f"dbt transformations failed: {e}")
@@ -171,7 +174,9 @@ def notify_completion(context, final_data: dict) -> str:
     context.log.info("=" * 60)
     context.log.info("🎉 Pipeline completed successfully!")
     context.log.info("=" * 60)
-    context.log.info(f"Final Execution State Summary:\n{json.dumps(final_data, indent=2)}")
+    context.log.info(
+        f"Final Execution State Summary:\n{json.dumps(final_data, indent=2)}"
+    )
     context.log.info("=" * 60)
     return "Pipeline Finished"
 
@@ -180,16 +185,17 @@ def notify_completion(context, final_data: dict) -> str:
 # JOB - Defines the explicit asset tracking flow
 # ============================================
 
+
 @job(
     description="Complete ETL pipeline for Medical Telegram Data Warehouse",
-    config={"ops": {"scrape_telegram_data": {"config": {"limit": 1000}}}}
+    config={"ops": {"scrape_telegram_data": {"config": {"limit": 1000}}}},
 )
 def telegram_pipeline():
     """Flow graph setup: Scrape -> Load Text -> Run YOLO -> Transform with dbt -> Notify"""
     scraped = scrape_telegram_data()
     loaded = load_raw_to_postgres(scraped)
-    enriched = run_yolo_enrichment(loaded)            
-    transformed = run_dbt_transformations(enriched)  
+    enriched = run_yolo_enrichment(loaded)
+    transformed = run_dbt_transformations(enriched)
     notify_completion(transformed)
 
 
@@ -197,9 +203,11 @@ def telegram_pipeline():
 # SCHEDULES
 # ============================================
 
+
 @schedule(cron_schedule="0 8 * * *", job=telegram_pipeline, execution_timezone="UTC")
 def daily_pipeline_schedule(context):
     return {}
+
 
 @schedule(cron_schedule="0 0 * * 0", job=telegram_pipeline, execution_timezone="UTC")
 def weekly_full_refresh_schedule(context):
