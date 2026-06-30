@@ -91,7 +91,7 @@ class YOLOLoader:
     def load_detailed(self, csv_path: str = "./data/processed/yolo_results/detailed_yolo_results.csv"):
         """Load YOLO detailed detections to PostgreSQL."""
         if not os.path.exists(csv_path):
-            print(f"  Detailed CSV not found: {csv_path}")
+            print(f"   Detailed CSV not found: {csv_path}")
             print("Run src/yolo_detect.py first!")
             return 0
 
@@ -99,14 +99,21 @@ class YOLOLoader:
         df = pd.read_csv(csv_path)
         print(f" Found {len(df)} individual detections")
 
-        # Load to PostgreSQL
+        # --- FIX APPLIED HERE ---
+        # Clear existing data manually using TRUNCATE CASCADE to protect downstream views
+        with self.engine.connect() as conn:
+            conn.execute(text("TRUNCATE TABLE raw.yolo_results_detailed CASCADE;"))
+            conn.commit()
+
+        # Switch 'replace' to 'append' so the structural framework isn't dropped
         df.to_sql(
             'yolo_results_detailed',
             self.engine,
             schema='raw',
-            if_exists='replace',
+            if_exists='append',
             index=False
         )
+        # ------------------------
 
         print(f" Loaded {len(df)} rows to raw.yolo_results_detailed")
         return len(df)
