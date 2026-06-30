@@ -99,16 +99,16 @@ models:
         description: "Legacy flag for media presence"
 
   # ============================================
-  #  YOLO Image Detection Fact Table
+  #  YOLO Image Detection Fact Table - FIXED
   # ============================================
   - name: fct_image_detections
     description: "Fact table with YOLO image detection results. Links image analysis to messages."
     columns:
       - name: message_id
-        description: "Unique message identifier (FK to fct_messages)"
+        description: "Message identifier (one message can have multiple object detections)"
         tests:
-          - unique
           - not_null
+          # - unique  # REMOVED: One message can have multiple detections
       
       - name: channel_key
         description: "Foreign key to dim_channels"
