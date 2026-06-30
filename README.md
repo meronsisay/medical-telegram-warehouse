@@ -19,7 +19,8 @@ This project builds a data platform that scrapes, stores, and analyzes data from
 medical-telegram-warehouse/
 ├── src/
 │ ├── scraper.py # Telegram scraper
-│ └── yolo_detect.py # YOLO object detection
+│ ├── yolo_detect.py # YOLO object detection
+│ └── pipeline.py # Dagster pipeline definition
 ├── data/
 │ └── raw/
 │ ├── telegram_messages/ # JSON files by date/channel
@@ -40,7 +41,7 @@ medical-telegram-warehouse/
 │ ├── schemas.py # Pydantic models
 │ └── endpoints.py # API endpoints
 ├── scripts/
-│ ├── load_data_lake_to_postgres.py # Load data lake to PostgreSQL
+│ ├── load_to_postgres.py # Load data lake to PostgreSQL
 │ └── load_yolo_to_postgres.py # Load YOLO results to PostgreSQL
 ├── .env # Environment variables
 ├── docker-compose.yml # Container orchestration
@@ -138,6 +139,24 @@ text
 
 ---
 
+### Pipeline Orchestration 
+
+**Dagster Pipeline:**
+
+| Step | Description |
+|------|-------------|
+| `scrape_telegram_data` | Scrape messages and images from Telegram |
+| `load_raw_to_postgres` | Load raw data to PostgreSQL |
+| `run_yolo_enrichment` | Run YOLO object detection |
+| `run_dbt_transformations` | Execute dbt models |
+| `notify_completion` | Log pipeline completion |
+
+**Schedules:**
+- **Daily:** Runs at 8:00 AM UTC
+- **Weekly:** Full refresh every Sunday
+
+**UI:** `http://localhost:3000` (Dagster dashboard)
+
 ## Setup Instructions
 
 ### 1. Prerequisites
@@ -178,25 +197,16 @@ pip install -r requirements.txt
 # Start PostgreSQL
 docker-compose up -d postgres
 
-# Scrape data
+# Option A: Run individual steps
 python src/scraper.py
-
-# Load data to PostgreSQL
-python scripts/load_data_lake_to_postgres.py
-
-# Run YOLO detection
+python scripts/load_to_postgres.py
 python src/yolo_detect.py
-
-# Load YOLO results
 python scripts/load_yolo_to_postgres.py
+cd medical_warehouse && dbt run && dbt test
 
-# Run dbt
-cd medical_warehouse
-dbt run
-dbt test
-dbt docs generate
-dbt docs serve
+# Option B: Run automated pipeline with Dagster
+dagster dev -f src/pipeline.py
+# Open http://localhost:3000 and launch the job
 
 # Start API
-cd ..
 uvicorn api.main:app --reload --host localhost --port 8000
